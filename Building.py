@@ -6,10 +6,18 @@ from Order import Order
 
 import pygame.draw
 
+# ----------------------------------------COLORS-------------------------------------------------------------
+
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+
+
+# ----------------------------------BUILDING CLASS-----------------------------------------------
+
 
 class Building:
-
-    """Building is a class representing simple building with it inhabitants. Buildings will occasionally
+    """Building is a class representing simple building with its inhabitants. Buildings will occasionally
     decide to order a packages.
 
      This class is extremely messy and needs a lot of rework"""
@@ -25,20 +33,32 @@ class Building:
         self.right = self.position.y + self.height / 2
         self.people = floor(width ** 2 / 5)
         self.rect = pygame.Rect(self.top, self.left, self.width, self.height)
+        self.order = 0
 
-    def draw(self, win, font):
+    def draw(self, win, font, display_name=False):
 
-        """This function will draw rectangles representing buildings
-        there is posibility of drawing number of building alongside with it by
-        decommenting code"""
+        """This function will draw rectangles representing buildings"""
 
-        pygame.draw.rect(win, (255,255,255), self.rect, 2)
-        #text = font.render(f"{self.unit_name}", 1, (255,255,255))
-        #win.blit(text, (self.position.x, self.position.y))
+        if self.order == 0:
+            color = WHITE
+        else:
+            color = YELLOW
+
+        pygame.draw.rect(win, color, self.rect, 2)
+        if display_name:
+            text = font.render(f"{self.unit_name}", 1, (255, 255, 255))
+            win.blit(text, (self.position.x, self.position.y))
+
+    def generate_order(self):
+        if self.order == 0:
+            self.order = randint(1, 21)
+            return Order(self.position, self.order)
+
+
+# --------------------------------CITY BUILDER CLASS-----------------------------------------------------------------
 
 
 class CityBuilder:
-
     """ City Builder is a class that builds structure of the city. It's main purpose it to create
      buildings that don't overlap. It has 2 list buildings and buildings to show. Buildings
      to show is a list which will progressively by populated with buildings from buildings list"""
@@ -46,6 +66,7 @@ class CityBuilder:
     def __init__(self):
         self.buildings = []
         self.buildings_show = []
+        self.orders = []
 
     def build_city(self, number, stations):
 
@@ -90,9 +111,9 @@ class CityBuilder:
             if flag or len(self.buildings) == 0:
                 print(f"Building created. Current amount {len(self.buildings)}")
                 self.buildings.append(Building(f"{len(self.buildings)}",
-                                                position_temp,
-                                                width_height,
-                                                width_height))
+                                               position_temp,
+                                               width_height,
+                                               width_height))
 
     def transport_next(self):
 
@@ -107,9 +128,20 @@ class CityBuilder:
         for building in self.buildings:
             print(f"{building.unit_name} : {building.position.x} , {building.position.x}")
 
+    def generate_orders(self, amount):
+        for x in range(amount):
+            temp = None
+            while not temp:
+                temp = self.buildings_show[randint(1, randint(1, len(self.buildings_show) - 1))].generate_order()
+
+            self.orders.append(temp)
+
+
+# -------------------------STATION CLASS-----------------------------------------------------------
+
 
 class Station:
-    def __init__(self, unit_name, position, capacity):
+    def __init__(self, unit_name, position):
 
         """Station is a class representing docking station for drones
         station takes orders from clients. After receiving order it will
@@ -123,9 +155,9 @@ class Station:
         self.unit_name = unit_name
         self.next_unit_name = 0
         self.position = position
-        self.capacity = capacity
         self.width = 40
         self.height = 40
+        self.capacity = int((self.width / 10) * (self.height / 10))
         self.top = self.position.x - self.width / 2
         self.left = self.position.y - self.height / 2
         self.bottom = self.position.x + self.width / 2
@@ -148,15 +180,16 @@ class Station:
 
         self.create_drone(20)
 
-    def draw(self, win, FONT):
+    def draw(self, win, font, display_name=False):
 
         """This function will draw rectangle representing station
-        there is posibility of drawing number of building alongside with it by
-        decommenting code"""
+        there is possibility of drawing number of building alongside with it by
+        uncommenting code"""
 
         pygame.draw.rect(win, (0, 0, 255), self.rect, 2)
-        #text = FONT.render(f"{self.unit_name}", 1, (255,255,255))
-        #win.blit(text, (self.position.x, self.position.y))
+        if display_name:
+            text = font.render(f"{self.unit_name}", 1, (255, 255, 255))
+            win.blit(text, (self.position.x, self.position.y))
 
     def add_order(self, order):
 
@@ -164,23 +197,27 @@ class Station:
 
         self.orders.append(order)
 
-    def create_drone(self, amount = 1):
+    def create_drone(self, amount=1):
 
         """ Creates drone and adds it to drones list"""
-
+        if amount == "MAX":
+            amount = self.capacity
         if len(self.drones) >= self.capacity:
             print("Maximum Drone Capacity Reached")
         else:
             for x in range(amount):
                 landing_sector = self.landing_sectors.pop(0)
-                self.drones.append(Dron(f"Dron_{self.next_unit_name}",
+                self.drones.append(Dron(f"Drone_{self.next_unit_name}",
                                         landing_sector,
                                         self.unit_name,
                                         self.position,
                                         landing_sector))
 
-            self.next_unit_name += 1
+                self.next_unit_name += 1
             print(f"STATION {self.unit_name}: {amount} drones created".upper())
+
+            for drone in self.drones:
+                print(drone.unit_name)
 
     def drone_decommission(self, drone_index):
         self.landing_sectors.append(self.drones[drone_index].landing_sector)
@@ -197,10 +234,10 @@ class Station:
         """ Creates orders in number specified by [ amount - int ] parameter """
 
         for x in range(amount):
-            self.add_order(Order(Position(randint(0,200),
-                                          randint(0,200),
-                                          randint(0,200),),
-                                        randint(1,20),))
+            self.add_order(Order(Position(randint(0, 200),
+                                          randint(0, 200),
+                                          randint(0, 200), ),
+                                 randint(1, 20), ))
 
     def show_orders(self):
 

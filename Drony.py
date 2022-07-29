@@ -1,4 +1,3 @@
-import Position
 import pygame.draw
 
 
@@ -51,9 +50,9 @@ class Dron:
         """ Creates delivery task for the drone and adds it to tasks queue """
 
         task = {
-            "task" : "DELIVERY",
-            "destination" : destination,
-            "load" : load
+            "task": "DELIVERY",
+            "destination": destination,
+            "load": load
         }
         self.add_task(task)
         self.task_return()
@@ -63,8 +62,8 @@ class Dron:
         """ Creates return task for the drone and adds it to tasks queue """
 
         task = {
-            "task" : "RETURN",
-            "destination" : self.home_station_position,
+            "task": "RETURN",
+            "destination": self.home_station_position,
         }
         self.add_task(task)
 
@@ -75,7 +74,7 @@ class Dron:
         self.tasks.append(formated_task)
 
     def draw(self, win):
-        pygame.draw.circle(win,(255, 0, 0),(self.position.x, self.position.y), 5, 3)
+        pygame.draw.circle(win, (255, 0, 0), (self.position.x, self.position.y), 5, 3)
 
     def show_tasks(self):
 
@@ -83,4 +82,4 @@ class Dron:
 
         print(f"{self.unit_name.upper()} :")
         for index, task in enumerate(self.tasks):
-            print(f"TASK {index}:  {task['task']} to {task['destination'].display()}")
+            print(f"TASK {index}: {task['task']} to {task['destination'].display()}")
